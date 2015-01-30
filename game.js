@@ -1,13 +1,18 @@
-/*var game = {
-	player : "O",
-	spaceArray : [],
-	turn : 0
-};
-*/
-
 var MAX_TURNS = 9;
 var PLAYERS = ["X", "O"];
 var INITIAL_PLAYER = PLAYERS[0];
+var WIN_INDEXES = [[1,2,3], [4,5,6], [7,8,9], [1,4,7], [2,5,8], [3,6,9], [1,5,9], [3,5,7]];
+
+var g;
+function initialize() {
+	g = new Game();
+	WIN_INDEXES = WIN_INDEXES.map(function(subArray) {
+		return subArray.map(function(position) {
+				return position - 1;
+		});
+	});
+	//console.log(WIN_INDEXES)
+}
 
 function Game() {
 
@@ -25,10 +30,7 @@ Game.prototype = {
 		return this.isComplete;
 	},
 	switchPlayer : function() {
-		if(this.player === PLAYERS[0])
-			this.player = PLAYERS[1];
-		else
-			this.player = PLAYERS[0];
+		this.player = (this.player === PLAYERS[0]) ? PLAYERS[1] : PLAYERS[0];
 	},
 	insertPosition : function(pos) {
 		//debugger;
@@ -43,23 +45,29 @@ Game.prototype = {
 		return true;
 	},
 	completeCondition : function() {
-		var winningConditions = [[1,2,3], [4,5,6], [7,8,9], [1,4,7], [2,5,8], [3,6,9], [1,5,9], [3,5,7]];
 		if(this.turn == MAX_TURNS) {
 			updateMessage("Game is a draw!");
 			return true;
 		} else {
-			return winningConditions.some(function(item, index, array) {
-				if(this.spaceArray[item[0] - 1] == undefined)
-					return false;		
-				//[] the below condition can be true if all indexes in 'spaceArray' are 'undefined'		
-				if((this.spaceArray[item[0] - 1] === this.spaceArray[item[1] - 1]) && (this.spaceArray[item[1] - 1] === this.spaceArray[item[2] - 1])) {
+			return WIN_INDEXES.some(function(element, index, array) {
+				//[] the below condition can be true if all indexes in 'spaceArray' are 'undefined'
+				var previousPlayer;
+				var gameWinner = function(index) {
+					if(this[index] != undefined) {
+						if(previousPlayer == undefined)
+							previousPlayer = this[index];
+						else
+							return this[index] == previousPlayer;
+						return true;
+					}
+				}
+				if(element.every(gameWinner.bind($(this.spaceArray)))) {
 					this.isComplete = true;
-					showCompete(item);
+					showCompete(element);
 					return true;
 				}
-				return false;
 			}.bind(this));
-		}		
+		}
 	},
 	resetGame : function() {
 		this.player = INITIAL_PLAYER;
@@ -69,15 +77,13 @@ Game.prototype = {
 	}
 };
 
-var g = new Game();
-
 function showCompete(arr) {
 	if(arr && arr.length) {
 		var winMsg = "Winner: Player " + g.currentPlayer();
 		console.log(winMsg);
 		updateMessage(winMsg);
 		arr.forEach(function(e, i, a) {
-			$("table td:eq(" + --e + ")").addClass("red");
+			$("table td:eq(" + e + ")").addClass("red");
 		});
 	}
 };
@@ -93,10 +99,11 @@ function updateMessage(msg) {
 	$("#status").html(msg);
 };
 
-$("#reset").click(function() {
+
+function resetGame() {
 	g.resetGame();
 	resetView();
-});
+}
 
 $("table td").click(function() {
 	var pos = $("table td").index($(this));
@@ -109,6 +116,8 @@ $("table td").click(function() {
 		g.insertPosition(pos);
 	}
 });
+
+initialize();
 
 /*
 g.insertPosition(1);
